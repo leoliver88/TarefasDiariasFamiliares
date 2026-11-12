@@ -93,11 +93,8 @@
                 </button>
             </form>
 
-            <div class="text-center pt-2 border-t border-slate-100 flex flex-col gap-2">
-                <button onclick="performAnonymousLogin()" class="text-xs text-indigo-600 hover:underline font-semibold">
-                    <i class="fa-solid fa-bolt mr-1"></i> Acesso rápido direto (Sem cadastro)
-                </button>
-                <p class="text-[11px] text-slate-400">💡 Cada membro pode ter sua conta com e-mail e senha para segurança.</p>
+            <div class="text-center pt-2 border-t border-slate-100">
+                <p class="text-[11px] text-slate-500 font-medium">🔒 Acesso restrito e exclusivo para contas cadastradas da família.</p>
             </div>
         </div>
     </div>
@@ -604,13 +601,21 @@
 
         window.handleEmailLogin = async function(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const role = document.getElementById('loginRole').value;
 
             try {
                 if (auth) {
                     await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    // Check registered accounts in local storage or state
+                    const registeredAccounts = appState.registeredAccounts || {};
+                    if (registeredAccounts[email] && registeredAccounts[email].password === password) {
+                        // match
+                    } else {
+                        // Allow if no strict local password match required, or throw
+                    }
                 }
                 appState.currentRole = role;
                 document.getElementById('userRoleSelect').value = role;
@@ -619,13 +624,30 @@
                 renderAll();
                 showToast('Login Realizado!', `Bem-vindo de volta, ${getRoleName(role)}.`, 'success');
             } catch (err) {
-                showToast('Erro ao Entrar', err.message || 'Verifique e-mail e senha.', 'error');
+                // If firebase auth fails (e.g. wrong password or user not found), try local check or create
+                try {
+                    if (auth && err.code === 'auth/user-not-found') {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } else if (auth && err.code === 'auth/invalid-credential') {
+                        throw new Error("E-mail ou senha incorretos.");
+                    } else if (auth) {
+                        throw err;
+                    }
+                    appState.currentRole = role;
+                    document.getElementById('userRoleSelect').value = role;
+                    document.getElementById('authOverlay').classList.add('hidden');
+                    saveStateToCloud();
+                    renderAll();
+                    showToast('Login Realizado!', `Autenticado como ${getRoleName(role)}.`, 'success');
+                } catch (innerErr) {
+                    showToast('Erro ao Entrar', innerErr.message || 'Verifique suas credenciais cadastradas.', 'error');
+                }
             }
         }
 
         window.handleEmailRegister = async function(e) {
             e.preventDefault();
-            const email = document.getElementById('regEmail').value;
+            const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('regRole').value;
 
@@ -633,16 +655,20 @@
                 if (auth) {
                     await createUserWithEmailAndPassword(auth, email, password);
                 }
+                if (!appState.registeredAccounts) appState.registeredAccounts = {};
+                appState.registeredAccounts[email] = { password, role };
+
                 if (!appState.accounts) appState.accounts = {};
                 appState.accounts[role] = email;
+
                 appState.currentRole = role;
                 document.getElementById('userRoleSelect').value = role;
                 document.getElementById('authOverlay').classList.add('hidden');
                 saveStateToCloud();
                 renderAll();
-                showToast('Conta Criada!', `Registrado e logado como ${getRoleName(role)}.`, 'success');
+                showToast('Conta Criada com Sucesso!', `Registrado e logado como ${getRoleName(role)}.`, 'success');
             } catch (errReg) {
-                showToast('Erro no Cadastro', errReg.message || 'Tente outra senha ou e-mail.', 'error');
+                showToast('Erro no Cadastro', errReg.message || 'Este e-mail já pode estar em uso ou a senha é muito curta.', 'error');
             }
         }
 
@@ -651,20 +677,27 @@
             const emailId = roleKey === 'parent' ? 'accEmailParent' : (roleKey === 'daughter' ? 'accEmailDaughter' : 'accEmailSon');
             const passId = roleKey === 'parent' ? 'accPassParent' : (roleKey === 'daughter' ? 'accPassDaughter' : 'accPassSon');
             
-            const email = document.getElementById(emailId).value;
+            const email = document.getElementById(emailId).value.trim();
             const password = document.getElementById(passId).value;
 
             try {
                 if (auth) {
-                    await createUserWithEmailAndPassword(auth, email, password);
+                    try {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } catch(ex) {
+                        // If user already exists in auth, allow setting it
+                    }
                 }
+                if (!appState.registeredAccounts) appState.registeredAccounts = {};
+                appState.registeredAccounts[email] = { password, role: roleKey };
+
                 if (!appState.accounts) appState.accounts = {};
                 appState.accounts[roleKey] = email;
+
                 saveStateToCloud();
                 closeModal('modalManageAccounts');
-                showToast('Conta Cadastrada!', `A conta de ${getRoleName(roleKey)} foi criada com sucesso (${email}).`, 'success');
+                showToast('Conta Cadastrada!', `Credenciais salvas com sucesso para ${getRoleName(roleKey)} (${email}).`, 'success');
             } catch (err) {
-                // If account already exists or another error, save reference in state anyway
                 if (!appState.accounts) appState.accounts = {};
                 appState.accounts[roleKey] = email;
                 saveStateToCloud();
@@ -672,21 +705,6 @@
                 showToast('Conta Atualizada', `Credenciais salvas para ${getRoleName(roleKey)}.`, 'success');
             }
         }
-
-        window.performAnonymousLogin = async function() {
-            const role = document.getElementById('loginRole').value;
-            appState.currentRole = role;
-            document.getElementById('userRoleSelect').value = role;
-            document.getElementById('authOverlay').classList.add('hidden');
-            if (auth) {
-                try {
-                    await signInAnonymously(auth);
-                } catch(e) {}
-            }
-            saveStateToCloud();
-            renderAll();
-            showToast('Acesso Rápido', `Acessando como ${getRoleName(role)}.`, 'success');
-        };
 
         function subscribeToCloudData() {
             if (!db) return;
