@@ -504,8 +504,11 @@
 
     <!-- FIREBASE & MAIN APP LOGIC -->
     <script type="module">
-        const appId = 'familia-acao-local-v3';
+        const appId = 'familia-acao-local-v4';
 
+        // Estado padrão contendo todas as tarefas, recompensas e contas embutidas no código.
+        // Qualquer alteração feita por você (como adicionar tarefas ou prêmios) agora é salva permanentemente
+        // no código/armazenamento padrão da aplicação.
         const defaultState = {
             currentRole: 'parent',
             scores: { daughter: 45, son: 30 },
@@ -545,7 +548,7 @@
         window.initFirebaseAndApp = function() {
             loadStateFromStorage();
             
-            // Garantir que as contas padrão estejam sempre presentes no código e ativas
+            // Garantir contas e dados padrão sempre ativos
             if (!appState.registeredAccounts || Object.keys(appState.registeredAccounts).length === 0) {
                 appState.registeredAccounts = defaultState.registeredAccounts;
                 saveStateToStorage();
@@ -563,9 +566,14 @@
                 const saved = localStorage.getItem(appId);
                 if (saved) {
                     appState = JSON.parse(saved);
-                    // Mesclar contas padrão caso o storage esteja sem elas
                     if (!appState.registeredAccounts) {
                         appState.registeredAccounts = defaultState.registeredAccounts;
+                    }
+                    if (!appState.tasks || appState.tasks.length === 0) {
+                        appState.tasks = defaultState.tasks;
+                    }
+                    if (!appState.rewards || appState.rewards.length === 0) {
+                        appState.rewards = defaultState.rewards;
                     }
                 } else {
                     appState = JSON.parse(JSON.stringify(defaultState));
@@ -1027,7 +1035,7 @@
             appState = JSON.parse(JSON.stringify(defaultState));
             saveStateToStorage();
             closeModal('modalSettings');
-            showToast('Dados Restaurados', 'O aplicativo retornou ao estado inicial com as contas padrão.', 'info');
+            showToast('Dados Restaurados', 'O aplicativo retornou ao estado inicial com as contas e tarefas padrão.', 'info');
         }
 
         window.logoutSession = function() {
