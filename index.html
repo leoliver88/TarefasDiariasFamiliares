@@ -504,7 +504,7 @@
 
     <!-- FIREBASE & MAIN APP LOGIC -->
     <script type="module">
-        const appId = 'familia-acao-local-v2';
+        const appId = 'familia-acao-local-v3';
 
         const defaultState = {
             currentRole: 'parent',
@@ -545,6 +545,12 @@
         window.initFirebaseAndApp = function() {
             loadStateFromStorage();
             
+            // Garantir que as contas padrão estejam sempre presentes no código e ativas
+            if (!appState.registeredAccounts || Object.keys(appState.registeredAccounts).length === 0) {
+                appState.registeredAccounts = defaultState.registeredAccounts;
+                saveStateToStorage();
+            }
+            
             const today = new Date().toLocaleDateString('pt-BR');
             const dateDisplay = document.getElementById('currentDateDisplay');
             if (dateDisplay) {
@@ -557,11 +563,17 @@
                 const saved = localStorage.getItem(appId);
                 if (saved) {
                     appState = JSON.parse(saved);
+                    // Mesclar contas padrão caso o storage esteja sem elas
+                    if (!appState.registeredAccounts) {
+                        appState.registeredAccounts = defaultState.registeredAccounts;
+                    }
                 } else {
+                    appState = JSON.parse(JSON.stringify(defaultState));
                     saveStateToStorage();
                 }
             } catch (e) {
                 console.warn("Storage load error:", e);
+                appState = JSON.parse(JSON.stringify(defaultState));
             }
             const authOverlay = document.getElementById('authOverlay');
             if (authOverlay && appState.currentUserLoggedIn) {
@@ -1015,7 +1027,7 @@
             appState = JSON.parse(JSON.stringify(defaultState));
             saveStateToStorage();
             closeModal('modalSettings');
-            showToast('Dados Restaurados', 'O aplicativo retornou ao estado inicial.', 'info');
+            showToast('Dados Restaurados', 'O aplicativo retornou ao estado inicial com as contas padrão.', 'info');
         }
 
         window.logoutSession = function() {
