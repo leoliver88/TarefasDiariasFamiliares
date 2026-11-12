@@ -389,6 +389,10 @@
                 <button onclick="closeModal('modalSettings')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="space-y-3">
+                <button onclick="closeModal('modalSettings'); openModal('modalManageAccounts');" class="w-full py-3 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-2xl text-xs flex items-center justify-between transition">
+                    <span><i class="fa-solid fa-users-gear mr-2"></i> Cadastrar / Gerenciar Contas de Acesso</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 <button onclick="closeModal('modalSettings'); openModal('modalPenalty');" class="w-full py-3 px-4 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-2xl text-xs flex items-center justify-between transition">
                     <span><i class="fa-solid fa-scale-balanced mr-2"></i> Aplicar Penalidade ou Bônus Manual</span>
                     <i class="fa-solid fa-chevron-right"></i>
@@ -401,6 +405,55 @@
                     <span><i class="fa-solid fa-right-from-bracket mr-2"></i> Sair / Trocar de Conta</span>
                     <i class="fa-solid fa-chevron-right"></i>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MANAGE ACCOUNTS (NEW) -->
+    <div id="modalManageAccounts" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-key text-indigo-600"></i> Credenciais e Contas da Família
+                </h3>
+                <button onclick="closeModal('modalManageAccounts')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <p class="text-xs text-slate-500">
+                Aqui você pode cadastrar e visualizar os dados de acesso oficiais para cada membro da família. Cada pessoa usará seu e-mail e senha para logar de seus dispositivos.
+            </p>
+
+            <div class="space-y-3 pt-2">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-user-shield text-indigo-600"></i> Pais (Conferentes / Admins)</h4>
+                    <form onsubmit="handleAccountRegistration(event, 'parent')" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="email" id="accEmailParent" placeholder="E-mail dos pais" required class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500">
+                        <input type="password" id="accPassParent" placeholder="Senha (mín 6)" minlength="6" required class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition">Salvar Conta</button>
+                    </form>
+                </div>
+
+                <div class="bg-pink-50/50 p-4 rounded-2xl border border-pink-100 space-y-3">
+                    <h4 class="text-xs font-bold text-pink-800 flex items-center gap-1.5"><i class="fa-solid fa-child-dress text-pink-600"></i> Filha (15 anos)</h4>
+                    <form onsubmit="handleAccountRegistration(event, 'daughter')" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="email" id="accEmailDaughter" placeholder="E-mail da filha" required class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500">
+                        <input type="password" id="accPassDaughter" placeholder="Senha (mín 6)" minlength="6" required class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500">
+                        <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition">Salvar Conta</button>
+                    </form>
+                </div>
+
+                <div class="bg-sky-50/50 p-4 rounded-2xl border border-sky-100 space-y-3">
+                    <h4 class="text-xs font-bold text-sky-800 flex items-center gap-1.5"><i class="fa-solid fa-child text-sky-600"></i> Filho (13 anos)</h4>
+                    <form onsubmit="handleAccountRegistration(event, 'son')" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="email" id="accEmailSon" placeholder="E-mail do filho" required class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500">
+                        <input type="password" id="accPassSon" placeholder="Senha (mín 6)" minlength="6" required class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-sky-500">
+                        <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition">Salvar Conta</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="button" onclick="closeModal('modalManageAccounts')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold">Fechar</button>
             </div>
         </div>
     </div>
@@ -475,6 +528,7 @@
         const defaultState = {
             currentRole: 'parent',
             scores: { daughter: 45, son: 30 },
+            accounts: { parent: '', daughter: '', son: '' },
             tasks: [
                 { id: 't1', child: 'daughter', title: 'Arrumar a cama e organizar o quarto', points: 5, completed: true, status: 'approved' },
                 { id: 't2', child: 'daughter', title: 'Recolher e lavar a louça do almoço/jantar', points: 10, completed: true, status: 'pending' },
@@ -579,6 +633,8 @@
                 if (auth) {
                     await createUserWithEmailAndPassword(auth, email, password);
                 }
+                if (!appState.accounts) appState.accounts = {};
+                appState.accounts[role] = email;
                 appState.currentRole = role;
                 document.getElementById('userRoleSelect').value = role;
                 document.getElementById('authOverlay').classList.add('hidden');
@@ -587,6 +643,33 @@
                 showToast('Conta Criada!', `Registrado e logado como ${getRoleName(role)}.`, 'success');
             } catch (errReg) {
                 showToast('Erro no Cadastro', errReg.message || 'Tente outra senha ou e-mail.', 'error');
+            }
+        }
+
+        window.handleAccountRegistration = async function(e, roleKey) {
+            e.preventDefault();
+            const emailId = roleKey === 'parent' ? 'accEmailParent' : (roleKey === 'daughter' ? 'accEmailDaughter' : 'accEmailSon');
+            const passId = roleKey === 'parent' ? 'accPassParent' : (roleKey === 'daughter' ? 'accPassDaughter' : 'accPassSon');
+            
+            const email = document.getElementById(emailId).value;
+            const password = document.getElementById(passId).value;
+
+            try {
+                if (auth) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+                if (!appState.accounts) appState.accounts = {};
+                appState.accounts[roleKey] = email;
+                saveStateToCloud();
+                closeModal('modalManageAccounts');
+                showToast('Conta Cadastrada!', `A conta de ${getRoleName(roleKey)} foi criada com sucesso (${email}).`, 'success');
+            } catch (err) {
+                // If account already exists or another error, save reference in state anyway
+                if (!appState.accounts) appState.accounts = {};
+                appState.accounts[roleKey] = email;
+                saveStateToCloud();
+                closeModal('modalManageAccounts');
+                showToast('Conta Atualizada', `Credenciais salvas para ${getRoleName(roleKey)}.`, 'success');
             }
         }
 
