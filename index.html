@@ -504,28 +504,21 @@
 
     <!-- FIREBASE & MAIN APP LOGIC -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'familia-acao-default';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDummyKeyForGitHubPagesHostingPlaceholder",
-            authDomain: "familia-acao.firebaseapp.com",
-            projectId: "familia-acao",
-            storageBucket: "familia-acao.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
-
-        let app, db, auth;
-        let currentUser = null;
-        let unsub = null;
+        const appId = 'familia-acao-local-v2';
 
         const defaultState = {
             currentRole: 'parent',
             scores: { daughter: 45, son: 30 },
-            accounts: { parent: '', daughter: '', son: '' },
+            registeredAccounts: {
+                "pai@familia.com": { password: "123456", role: "parent" },
+                "filha@familia.com": { password: "123456", role: "daughter" },
+                "filho@familia.com": { password: "123456", role: "son" }
+            },
+            accounts: { 
+                parent: "pai@familia.com", 
+                daughter: "filha@familia.com", 
+                son: "filho@familia.com" 
+            },
             tasks: [
                 { id: 't1', child: 'daughter', title: 'Arrumar a cama e organizar o quarto', points: 5, completed: true, status: 'approved' },
                 { id: 't2', child: 'daughter', title: 'Recolher e lavar a louça do almoço/jantar', points: 10, completed: true, status: 'pending' },
@@ -542,48 +535,49 @@
                 { id: 'r5', title: 'Passeio Sorveteria com Pais', description: 'Saída especial para tomar sorvete', cost: 180, emoji: '🍦' }
             ],
             history: [
-                { date: '12/03/2026 09:00', child: 'daughter', title: 'Início do Sistema Cloud', points: '+45' },
-                { date: '12/03/2026 09:00', child: 'son', title: 'Início do Sistema Cloud', points: '+30' }
+                { date: '12/03/2026 09:00', child: 'daughter', title: 'Início do Sistema', points: '+45' },
+                { date: '12/03/2026 09:00', child: 'son', title: 'Início do Sistema', points: '+30' }
             ]
         };
 
         let appState = JSON.parse(JSON.stringify(defaultState));
 
-        window.initFirebaseAndApp = async function() {
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        currentUser = user;
-                        const authOverlay = document.getElementById('authOverlay');
-                        if (authOverlay) authOverlay.classList.add('hidden');
-                        subscribeToCloudData();
-                    } else {
-                        try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            }
-                        } catch (err) {
-                            console.warn("Auth token notice:", err);
-                        }
-                    }
-                });
-            } catch (e) {
-                console.warn("Fallback to offline mode due to config error:", e);
-                const authOverlay = document.getElementById('authOverlay');
-                if (authOverlay) authOverlay.classList.add('hidden');
-                renderAll();
-            }
-
+        window.initFirebaseAndApp = function() {
+            loadStateFromStorage();
+            
             const today = new Date().toLocaleDateString('pt-BR');
             const dateDisplay = document.getElementById('currentDateDisplay');
             if (dateDisplay) {
                 dateDisplay.textContent = today;
             }
         };
+
+        function loadStateFromStorage() {
+            try {
+                const saved = localStorage.getItem(appId);
+                if (saved) {
+                    appState = JSON.parse(saved);
+                } else {
+                    saveStateToStorage();
+                }
+            } catch (e) {
+                console.warn("Storage load error:", e);
+            }
+            const authOverlay = document.getElementById('authOverlay');
+            if (authOverlay && appState.currentUserLoggedIn) {
+                authOverlay.classList.add('hidden');
+            }
+            renderAll();
+        }
+
+        function saveStateToStorage() {
+            try {
+                localStorage.setItem(appId, JSON.stringify(appState));
+            } catch (e) {
+                console.warn("Storage save error:", e);
+            }
+            renderAll();
+        }
 
         window.switchAuthTab = function(tab) {
             if (tab === 'login') {
@@ -599,80 +593,53 @@
             }
         }
 
-        window.handleEmailLogin = async function(e) {
+        window.handleEmailLogin = function(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const role = document.getElementById('loginRole').value;
 
-            try {
-                if (auth) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } else {
-                    // Check registered accounts in local storage or state
-                    const registeredAccounts = appState.registeredAccounts || {};
-                    if (registeredAccounts[email] && registeredAccounts[email].password === password) {
-                        // match
-                    } else {
-                        // Allow if no strict local password match required, or throw
-                    }
-                }
-                appState.currentRole = role;
-                document.getElementById('userRoleSelect').value = role;
-                document.getElementById('authOverlay').classList.add('hidden');
-                saveStateToCloud();
-                renderAll();
-                showToast('Login Realizado!', `Bem-vindo de volta, ${getRoleName(role)}.`, 'success');
-            } catch (err) {
-                // If firebase auth fails (e.g. wrong password or user not found), try local check or create
-                try {
-                    if (auth && err.code === 'auth/user-not-found') {
-                        await createUserWithEmailAndPassword(auth, email, password);
-                    } else if (auth && err.code === 'auth/invalid-credential') {
-                        throw new Error("E-mail ou senha incorretos.");
-                    } else if (auth) {
-                        throw err;
-                    }
-                    appState.currentRole = role;
-                    document.getElementById('userRoleSelect').value = role;
-                    document.getElementById('authOverlay').classList.add('hidden');
-                    saveStateToCloud();
-                    renderAll();
-                    showToast('Login Realizado!', `Autenticado como ${getRoleName(role)}.`, 'success');
-                } catch (innerErr) {
-                    showToast('Erro ao Entrar', innerErr.message || 'Verifique suas credenciais cadastradas.', 'error');
-                }
+            if (!appState.registeredAccounts) {
+                appState.registeredAccounts = defaultState.registeredAccounts;
             }
+
+            const acc = appState.registeredAccounts[email];
+            if (!acc || acc.password !== password) {
+                showToast('Erro ao Entrar', 'E-mail ou senha incorretos. Verifique os dados cadastrados.', 'error');
+                return;
+            }
+
+            appState.currentRole = acc.role || role;
+            appState.currentUserLoggedIn = email;
+            document.getElementById('userRoleSelect').value = appState.currentRole;
+            document.getElementById('authOverlay').classList.add('hidden');
+            saveStateToStorage();
+            showToast('Login Realizado!', `Bem-vindo de volta, ${getRoleName(appState.currentRole)}.`, 'success');
         }
 
-        window.handleEmailRegister = async function(e) {
+        window.handleEmailRegister = function(e) {
             e.preventDefault();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const role = document.getElementById('regRole').value;
 
-            try {
-                if (auth) {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                }
-                if (!appState.registeredAccounts) appState.registeredAccounts = {};
-                appState.registeredAccounts[email] = { password, role };
+            if (!appState.registeredAccounts) appState.registeredAccounts = {};
 
-                if (!appState.accounts) appState.accounts = {};
-                appState.accounts[role] = email;
-
-                appState.currentRole = role;
-                document.getElementById('userRoleSelect').value = role;
-                document.getElementById('authOverlay').classList.add('hidden');
-                saveStateToCloud();
-                renderAll();
-                showToast('Conta Criada com Sucesso!', `Registrado e logado como ${getRoleName(role)}.`, 'success');
-            } catch (errReg) {
-                showToast('Erro no Cadastro', errReg.message || 'Este e-mail já pode estar em uso ou a senha é muito curta.', 'error');
+            if (appState.registeredAccounts[email]) {
+                showToast('Erro no Cadastro', 'Este e-mail já está cadastrado no sistema.', 'error');
+                return;
             }
+
+            appState.registeredAccounts[email] = { password, role };
+            appState.currentRole = role;
+            appState.currentUserLoggedIn = email;
+            document.getElementById('userRoleSelect').value = role;
+            document.getElementById('authOverlay').classList.add('hidden');
+            saveStateToStorage();
+            showToast('Conta Criada com Sucesso!', `Registrado e logado como ${getRoleName(role)}.`, 'success');
         }
 
-        window.handleAccountRegistration = async function(e, roleKey) {
+        window.handleAccountRegistration = function(e, roleKey) {
             e.preventDefault();
             const emailId = roleKey === 'parent' ? 'accEmailParent' : (roleKey === 'daughter' ? 'accEmailDaughter' : 'accEmailSon');
             const passId = roleKey === 'parent' ? 'accPassParent' : (roleKey === 'daughter' ? 'accPassDaughter' : 'accPassSon');
@@ -680,65 +647,20 @@
             const email = document.getElementById(emailId).value.trim();
             const password = document.getElementById(passId).value;
 
-            try {
-                if (auth) {
-                    try {
-                        await createUserWithEmailAndPassword(auth, email, password);
-                    } catch(ex) {
-                        // If user already exists in auth, allow setting it
-                    }
-                }
-                if (!appState.registeredAccounts) appState.registeredAccounts = {};
-                appState.registeredAccounts[email] = { password, role: roleKey };
+            if (!appState.registeredAccounts) appState.registeredAccounts = {};
+            appState.registeredAccounts[email] = { password, role: roleKey };
 
-                if (!appState.accounts) appState.accounts = {};
-                appState.accounts[roleKey] = email;
+            if (!appState.accounts) appState.accounts = {};
+            appState.accounts[roleKey] = email;
 
-                saveStateToCloud();
-                closeModal('modalManageAccounts');
-                showToast('Conta Cadastrada!', `Credenciais salvas com sucesso para ${getRoleName(roleKey)} (${email}).`, 'success');
-            } catch (err) {
-                if (!appState.accounts) appState.accounts = {};
-                appState.accounts[roleKey] = email;
-                saveStateToCloud();
-                closeModal('modalManageAccounts');
-                showToast('Conta Atualizada', `Credenciais salvas para ${getRoleName(roleKey)}.`, 'success');
-            }
-        }
-
-        function subscribeToCloudData() {
-            if (!db) return;
-            const docRef = doc(db, 'artifacts', appId, 'states', 'familia_state_v1');
-            
-            unsub = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    appState = docSnap.data();
-                } else {
-                    setDoc(docRef, defaultState).catch(err => console.warn("Init doc error:", err));
-                    appState = JSON.parse(JSON.stringify(defaultState));
-                }
-                document.getElementById('userRoleSelect').value = appState.currentRole || 'parent';
-                renderAll();
-            }, (error) => {
-                console.warn("Firestore sync notice:", error.message);
-                renderAll();
-            });
-        }
-
-        async function saveStateToCloud() {
-            renderAll();
-            if (!db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'states', 'familia_state_v1');
-                await setDoc(docRef, appState);
-            } catch (e) {
-                console.warn("Cloud save warning:", e.message);
-            }
+            saveStateToStorage();
+            closeModal('modalManageAccounts');
+            showToast('Conta Cadastrada!', `Credenciais salvas com sucesso para ${getRoleName(roleKey)}.`, 'success');
         }
 
         window.switchRole = function(role) {
             appState.currentRole = role;
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Perfil alterado', `Você está navegando como ${getRoleName(role)}.`, 'info');
         }
 
@@ -866,7 +788,7 @@
             } else {
                 task.status = 'open';
             }
-            saveStateToCloud();
+            saveStateToStorage();
         }
 
         function renderValidationTable() {
@@ -912,7 +834,7 @@
             if (!appState.history) appState.history = [];
             appState.history.unshift({ date: now, child: task.child, title: `Tarefa Aprovada: ${task.title}`, points: `+${task.points}` });
 
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Tarefa Aprovada!', `Pontos creditados para ${childLabel}.`, 'success');
         }
 
@@ -922,7 +844,7 @@
 
             task.completed = false;
             task.status = 'open';
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Tarefa Rejeitada', 'A tarefa retornou para pendente para ser refeita.', 'error');
         }
 
@@ -971,7 +893,7 @@
             if (!appState.history) appState.history = [];
             appState.history.unshift({ date: now, child: childKey, title: `Resgate: ${reward.title}`, points: `-${reward.cost}` });
 
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Recompensa Resgatada!', `${childName} resgatou com sucesso: ${reward.title}!`, 'success');
         }
 
@@ -1022,7 +944,7 @@
                 appState.tasks.push({ id: 't_' + Date.now(), child, title, points, completed: false, status: 'open' });
             }
 
-            saveStateToCloud();
+            saveStateToStorage();
             closeModal('modalAddTask');
             document.getElementById('newTaskTitle').value = '';
             showToast('Tarefa Criada', 'Nova tarefa adicionada ao checklist.', 'success');
@@ -1037,7 +959,7 @@
 
             if (!appState.rewards) appState.rewards = [];
             appState.rewards.push({ id: 'r_' + Date.now(), title, description, cost, emoji });
-            saveStateToCloud();
+            saveStateToStorage();
             closeModal('modalAddReward');
             showToast('Recompensa Adicionada', 'A nova recompensa já está disponível na loja.', 'success');
         }
@@ -1064,13 +986,13 @@
                 showToast('Bônus Concedido', `${points} pontos adicionados para ${childName}.`, 'success');
             }
 
-            saveStateToCloud();
+            saveStateToStorage();
             closeModal('modalPenalty');
         }
 
         window.deleteTask = function(taskId) {
             appState.tasks = (appState.tasks || []).filter(t => t.id !== taskId);
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Tarefa Removida', 'A tarefa foi excluída.', 'info');
         }
 
@@ -1079,25 +1001,27 @@
                 t.completed = false;
                 t.status = 'open';
             });
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Checklist Reiniciado', 'Todas as tarefas voltaram para o status diário.', 'info');
         }
 
         window.clearHistory = function() {
             appState.history = [];
-            saveStateToCloud();
+            saveStateToStorage();
             showToast('Histórico limpo', 'O registro foi esvaziado.', 'info');
         }
 
         window.resetDefaultData = function() {
             appState = JSON.parse(JSON.stringify(defaultState));
-            saveStateToCloud();
+            saveStateToStorage();
             closeModal('modalSettings');
             showToast('Dados Restaurados', 'O aplicativo retornou ao estado inicial.', 'info');
         }
 
         window.logoutSession = function() {
             closeModal('modalSettings');
+            appState.currentUserLoggedIn = null;
+            saveStateToStorage();
             document.getElementById('authOverlay').classList.remove('hidden');
         }
 
