@@ -36,12 +36,27 @@
                     <i class="fa-solid fa-house-chimney text-indigo-600"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Família em Ação</h2>
-                <p class="text-xs text-slate-500">Faça login para sincronizar tarefas e pontos na nuvem em tempo real.</p>
+                <p class="text-xs text-slate-500">Entre com seu e-mail e senha cadastrados ou acesse rapidamente.</p>
             </div>
 
-            <div class="space-y-4">
+            <!-- Auth Tabs: Login vs Register -->
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+                <button onclick="switchAuthTab('login')" id="authTabLoginBtn" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition">Entrar</button>
+                <button onclick="switchAuthTab('register')" id="authTabRegisterBtn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition">Cadastrar Conta</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleEmailLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Selecionar Perfil de Acesso</label>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">E-mail</label>
+                    <input type="email" id="loginEmail" required placeholder="ex: pai@familia.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Senha</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Perfil no Sistema</label>
                     <select id="loginRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="parent">👨‍👩‍👧 Pais (Conferentes / Admins)</option>
                         <option value="daughter">👧 Filha (15 anos)</option>
@@ -49,392 +64,398 @@
                     </select>
                 </div>
 
-                <button onclick="performLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Entrar na Nuvem Familiar
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar com E-mail e Senha
                 </button>
-            </div>
+            </form>
 
-            <div class="text-center pt-2 border-t border-slate-100">
-                <p class="text-[11px] text-slate-400">💡 Compartilhe o link do GitHub Pages com seus filhos no celular deles!</p>
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="handleEmailRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Novo E-mail</label>
+                    <input type="email" id="regEmail" required placeholder="ex: filha@familia.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Criar Senha (mín. 6 dígitos)</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••" minlength="6" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Definir Perfil</label>
+                    <select id="regRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="parent">👨‍👩‍👧 Pais (Conferentes / Admins)</option>
+                        <option value="daughter">👧 Filha (15 anos)</option>
+                        <option value="son">👦 Filho (13 anos)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-emerald-600/30 transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> Criar Conta Familiar
+                </button>
+            </form>
+
+            <div class="text-center pt-2 border-t border-slate-100 flex flex-col gap-2">
+                <button onclick="performAnonymousLogin()" class="text-xs text-indigo-600 hover:underline font-semibold">
+                    <i class="fa-solid fa-bolt mr-1"></i> Acesso rápido direto (Sem cadastro)
+                </button>
+                <p class="text-[11px] text-slate-400">💡 Cada membro pode ter sua conta com e-mail e senha para segurança.</p>
             </div>
         </div>
     </div>
 
     <!-- Top Navigation / Header -->
-    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- App Branding -->
             <div class="flex items-center space-x-3">
-                <div class="bg-white/10 p-2 rounded-xl text-2xl">
-                    <i class="fa-solid fa-house-chimney text-yellow-300"></i>
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-house-chimney"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">Família em Ação</h1>
-                    <p class="text-xs text-indigo-200 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> GitHub Pages & Cloud</p>
+                    <h1 class="font-bold text-slate-800 text-base leading-tight">Família em Ação</h1>
+                    <p class="text-xs text-slate-500 flex items-center gap-1">
+                        <span id="currentDateDisplay" class="font-medium text-slate-600">Hoje</span> • Casa Organizada
+                    </p>
                 </div>
             </div>
 
-            <!-- Role Switcher & User Status -->
-            <div class="flex items-center gap-3">
-                <div class="flex items-center bg-indigo-700/60 rounded-xl p-1 text-sm border border-indigo-500/50">
-                    <span class="px-3 text-xs text-indigo-200 font-medium hidden sm:inline"><i class="fa-solid fa-user-gear mr-1"></i>Perfil:</span>
-                    <select id="userRoleSelect" onchange="switchRole(this.value)" class="bg-indigo-800 text-white text-xs sm:text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
-                        <option value="parent">👨‍👩‍👧 Pais (Conferentes)</option>
-                        <option value="daughter">👧 Filha (15 anos)</option>
-                        <option value="son">👦 Filho (13 anos)</option>
+            <!-- Profile & Score Summary -->
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <div class="bg-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs">
+                    <span class="text-slate-500 font-medium">👧 Filha:</span>
+                    <span id="scoreBadgeDaughter" class="font-bold text-indigo-600">45 pts</span>
+                </div>
+                <div class="bg-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs">
+                    <span class="text-slate-500 font-medium">👦 Filho:</span>
+                    <span id="scoreBadgeSon" class="font-bold text-sky-600">30 pts</span>
+                </div>
+
+                <!-- Profile Switcher Dropdown -->
+                <div class="relative">
+                    <select id="userRoleSelect" onchange="switchRole(this.value)" class="bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                        <option value="parent">👨‍👩‍👧 Modo: Pais (Conferentes)</option>
+                        <option value="daughter">👧 Modo: Filha (15 anos)</option>
+                        <option value="son">👦 Modo: Filho (13 anos)</option>
                     </select>
                 </div>
-                <button onclick="openModal('modalSettings')" class="bg-indigo-700 hover:bg-indigo-800 p-2 rounded-xl text-white transition text-sm" title="Configurações & Dados">
-                    <i class="fa-solid fa-sliders"></i>
+
+                <button onclick="openModal('modalSettings')" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center transition" title="Configurações e Ajustes">
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
-
-        <!-- Notification Banner / Custom Alert Box -->
-        <div id="toastBox" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border-l-4 border-indigo-500 transition-all transform translate-y-2">
-            <i id="toastIcon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
-            <div>
-                <h4 id="toastTitle" class="font-bold text-sm">Aviso</h4>
-                <p id="toastMessage" class="text-xs text-slate-300">Mensagem aqui</p>
-            </div>
-        </div>
-
-        <!-- Dashboard Summary Bar: Points Balance -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pontos da Filha (15 anos)</p>
-                    <h3 id="scoreDaughter" class="text-3xl font-bold text-indigo-600 mt-1">0 pts</h3>
-                    <span class="text-xs text-emerald-600 font-medium mt-1 inline-block"><i class="fa-solid fa-trophy mr-1"></i>Pronta para resgate</span>
-                </div>
-                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-bold">
-                    👧
-                </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pontos do Filho (13 anos)</p>
-                    <h3 id="scoreSon" class="text-3xl font-bold text-sky-600 mt-1">0 pts</h3>
-                    <span class="text-xs text-emerald-600 font-medium mt-1 inline-block"><i class="fa-solid fa-trophy mr-1"></i>Pronta para resgate</span>
-                </div>
-                <div class="w-12 h-12 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center text-xl font-bold">
-                    👦
-                </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pendentes de Validação</p>
-                    <h3 id="countPending" class="text-3xl font-bold text-amber-500 mt-1">0</h3>
-                    <span class="text-xs text-amber-600 font-medium mt-1 inline-block"><i class="fa-solid fa-clock mr-1"></i>Aguardando Pais</span>
-                </div>
-                <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-clipboard-check"></i>
-                </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Data de Hoje</p>
-                    <h3 id="currentDateDisplay" class="text-lg font-bold text-slate-700 mt-1">--/--/----</h3>
-                    <span class="text-xs text-slate-500 font-medium mt-1 inline-block"><i class="fa-solid fa-calendar-day mr-1"></i>Checkup Ativo</span>
-                </div>
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-calendar-check"></i>
-                </div>
-            </div>
-        </section>
 
         <!-- Navigation Tabs -->
-        <div class="flex border-b border-slate-200 overflow-x-auto space-x-6">
-            <button onclick="switchTab('tabTasks')" id="btnTabTasks" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-indigo-600 border-indigo-600 whitespace-nowrap">
-                <i class="fa-solid fa-list-check mr-2"></i>Tarefas Diárias & Checklist
+        <div class="max-w-7xl mx-auto px-4 flex border-t border-slate-100 overflow-x-auto">
+            <button onclick="switchTab('tabTasks')" id="btnTabTasks" class="py-3 px-5 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-list-check"></i> Tarefas Diárias & Checklist
             </button>
-            <button onclick="switchTab('tabValidation')" id="btnTabValidation" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-slate-500 border-transparent hover:text-slate-700 whitespace-nowrap">
-                <i class="fa-solid fa-clipboard-list mr-2"></i>Painel de Validação (Pais) <span id="badgeValidation" class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full ml-1">0</span>
+            <button onclick="switchTab('tabValidation')" id="btnTabValidation" class="py-3 px-5 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-clipboard-check"></i> Conferência dos Pais 
+                <span id="badgeValidation" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
             </button>
-            <button onclick="switchTab('tabRewards')" id="btnTabRewards" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-slate-500 border-transparent hover:text-slate-700 whitespace-nowrap">
-                <i class="fa-solid fa-gift mr-2"></i>Loja de Recompensas
+            <button onclick="switchTab('tabRewards')" id="btnTabRewards" class="py-3 px-5 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-store"></i> Loja de Recompensas
             </button>
-            <button onclick="switchTab('tabHistory')" id="btnTabHistory" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-slate-500 border-transparent hover:text-slate-700 whitespace-nowrap">
-                <i class="fa-solid fa-clock-rotate-left mr-2"></i>Histórico & Extrato
+            <button onclick="switchTab('tabHistory')" id="btnTabHistory" class="py-3 px-5 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-clock-rotate-left"></i> Extrato & Histórico
             </button>
         </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
 
         <!-- TAB 1: TASKS & CHECKLIST -->
-        <div id="tabTasks" class="space-y-6">
-            <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <section id="tabTasks" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800">Checklist Diário dos Filhos</h2>
-                    <p class="text-xs text-slate-500">Filhos marcam quando concluem. Os pais conferem na aba de validação.</p>
+                    <h2 class="text-xl font-bold text-slate-800">Checklist Diário de Tarefas</h2>
+                    <p class="text-xs text-slate-500 mt-1">Marque as tarefas assim que concluir. Os pais farão a conferência diária.</p>
                 </div>
-                <div id="parentTaskControls" class="hidden flex gap-2">
-                    <button onclick="openModal('modalAddTask')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm">
-                        <i class="fa-solid fa-plus mr-1"></i> Nova Tarefa
+                <div id="parentTaskControls" class="flex gap-2">
+                    <button onclick="openModal('modalAddTask')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Nova Tarefa
                     </button>
-                    <button onclick="resetDailyChecklist()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
-                        <i class="fa-solid fa-rotate-right mr-1"></i> Resetar Dia
+                    <button onclick="resetDailyChecklist()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Reiniciar Dia
                     </button>
                 </div>
             </div>
 
+            <!-- Grid for Children Tasks -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Daughter Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 text-white flex justify-between items-center">
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-lg">👧</div>
+                            <div class="w-10 h-10 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center font-bold text-lg">👧</div>
                             <div>
-                                <h3 class="font-bold">Filha (15 anos)</h3>
-                                <p class="text-xs text-indigo-100">Responsável pelo quarto e rodízio diário</p>
+                                <h3 class="font-bold text-slate-800 text-base">Filha (15 anos)</h3>
+                                <p class="text-xs text-slate-400">Responsável pelos quartos, louças e áreas</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <span id="scoreBadgeDaughter" class="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-semibold">0 pts</span>
-                        </div>
+                        <span id="scoreDaughter" class="bg-pink-50 text-pink-700 font-bold text-xs px-3 py-1.5 rounded-xl">45 pts</span>
                     </div>
-                    <div class="p-4 flex-grow space-y-3" id="listDaughterTasks">
-                        <!-- Dynamically populated -->
+
+                    <div id="listDaughterTasks" class="space-y-3">
+                        <!-- Dynamic rendered list -->
                     </div>
                 </div>
 
                 <!-- Son Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                    <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4 text-white flex justify-between items-center">
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-lg">👦</div>
+                            <div class="w-10 h-10 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center font-bold text-lg">👦</div>
                             <div>
-                                <h3 class="font-bold">Filho (13 anos)</h3>
-                                <p class="text-xs text-sky-100">Responsável pelo quarto e apoio na casa</p>
+                                <h3 class="font-bold text-slate-800 text-base">Filho (13 anos)</h3>
+                                <p class="text-xs text-slate-400">Responsável por garagem, pets e apoio</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <span id="scoreBadgeSon" class="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-semibold">0 pts</span>
-                        </div>
+                        <span id="scoreSon" class="bg-sky-50 text-sky-700 font-bold text-xs px-3 py-1.5 rounded-xl">30 pts</span>
                     </div>
-                    <div class="p-4 flex-grow space-y-3" id="listSonTasks">
-                        <!-- Dynamically populated -->
+
+                    <div id="listSonTasks" class="space-y-3">
+                        <!-- Dynamic rendered list -->
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- TAB 2: VALIDATION QUEUE (PARENTS) -->
-        <div id="tabValidation" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-clipboard-check text-indigo-600 mr-2"></i>Painel de Validação e Penalidades (Área dos Pais)</h2>
-                        <p class="text-xs text-slate-500">Confirme as tarefas realizadas pelos filhos para liberar os pontos, ou aplique penalidades se necessário.</p>
-                    </div>
-                    <button onclick="openModal('modalPenalty')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
-                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Aplicar Penalidade / Bônus
-                    </button>
+        <!-- TAB 2: VALIDATION (PARENTS) -->
+        <section id="tabValidation" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Painel de Conferência dos Pais</h2>
+                    <p class="text-xs text-slate-500 mt-1">Valide as tarefas sinalizadas como concluídas para creditar os pontos ou solicitar ajustes.</p>
                 </div>
+                <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-bell"></i> <span id="countPending">0</span> tarefas aguardando aprovação
+                </div>
+            </div>
 
+            <!-- Validation Table -->
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
-                                <th class="py-3 px-4 font-semibold">Filho(a)</th>
-                                <th class="py-3 px-4 font-semibold">Tarefa / Descrição</th>
-                                <th class="py-3 px-4 font-semibold">Pontos</th>
-                                <th class="py-3 px-4 font-semibold">Status</th>
-                                <th class="py-3 px-4 font-semibold text-right">Ações dos Pais</th>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <th class="py-3.5 px-4 font-semibold">Filho(a)</th>
+                                <th class="py-3.5 px-4 font-semibold">Tarefa Realizada</th>
+                                <th class="py-3.5 px-4 font-semibold">Valor</th>
+                                <th class="py-3.5 px-4 font-semibold">Status</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Ação dos Pais</th>
                             </tr>
                         </thead>
-                        <tbody id="validationTableBody" class="divide-y divide-slate-100 text-sm">
-                            <!-- Dynamically populated -->
+                        <tbody id="validationTableBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- TAB 3: REWARDS STORE -->
-        <div id="tabRewards" class="hidden space-y-6">
-            <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <section id="tabRewards" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-gift text-indigo-600 mr-2"></i>Loja de Recompensas da Família</h2>
-                    <p class="text-xs text-slate-500">Troque seus pontos acumulados por privilégios, tempo de tela ou bônus!</p>
+                    <h2 class="text-xl font-bold text-slate-800">Loja de Recompensas</h2>
+                    <p class="text-xs text-slate-500 mt-1">Troque pontos acumulados por privilégios, tempo de tela extra ou prêmios.</p>
                 </div>
-                <div id="parentRewardControls" class="hidden">
-                    <button onclick="openModal('modalAddReward')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm">
-                        <i class="fa-solid fa-plus mr-1"></i> Adicionar Recompensa
+                <div id="parentRewardControls">
+                    <button onclick="openModal('modalAddReward')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Nova Recompensa
                     </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="rewardsGrid">
-                <!-- Dynamically populated -->
+            <!-- Rewards Grid -->
+            <div id="rewardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamic cards -->
             </div>
-        </div>
+        </section>
 
-        <!-- TAB 4: HISTORY & STATEMENT -->
-        <div id="tabHistory" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-2"></i>Histórico de Atividades e Extrato</h2>
-                        <p class="text-xs text-slate-500">Registro de todas as pontuações, resgates e penalidades aplicadas.</p>
-                    </div>
-                    <button onclick="clearHistory()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                        Limpar Histórico
-                    </button>
+        <!-- TAB 4: HISTORY & EXTRACT -->
+        <section id="tabHistory" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Extrato & Histórico de Pontuação</h2>
+                    <p class="text-xs text-slate-500 mt-1">Registro completo de pontos ganhos, penalidades aplicadas e resgates realizados.</p>
                 </div>
+                <button onclick="clearHistory()" class="text-xs text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-xl border border-rose-200 transition">
+                    <i class="fa-solid fa-trash mr-1"></i> Limpar Extrato
+                </button>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
-                                <th class="py-3 px-4 font-semibold">Data / Hora</th>
-                                <th class="py-3 px-4 font-semibold">Filho(a)</th>
-                                <th class="py-3 px-4 font-semibold">Descrição</th>
-                                <th class="py-3 px-4 font-semibold">Pontos</th>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <th class="py-3.5 px-4 font-semibold">Data / Hora</th>
+                                <th class="py-3.5 px-4 font-semibold">Membro</th>
+                                <th class="py-3.5 px-4 font-semibold">Descrição / Evento</th>
+                                <th class="py-3.5 px-4 font-semibold">Pontos</th>
                             </tr>
                         </thead>
-                        <tbody id="historyTableBody" class="divide-y divide-slate-100 text-sm">
-                            <!-- Dynamically populated -->
+                        <tbody id="historyTableBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </section>
+
     </main>
 
     <!-- FOOTER -->
-    <footer class="mt-auto bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        <p>Família em Ação • GitHub Pages Ready • 15 & 13 Anos</p>
+    <footer class="bg-white border-t border-slate-200 py-4 mt-10">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            Família em Ação • Sistema Integrado de Gestão Doméstica e Recompensas na Nuvem.
+        </div>
     </footer>
 
-    <!-- MODAL: ADD TASK (Parents) -->
-    <div id="modalAddTask" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-800">Adicionar Nova Tarefa</h3>
-                <button onclick="closeModal('modalAddTask')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- MODAL: ADD TASK -->
+    <div id="modalAddTask" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base">Adicionar Nova Tarefa</h3>
+                <button onclick="closeModal('modalAddTask')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="handleAddTask(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Para quem?</label>
-                    <select id="newTaskChild" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Responsável</label>
+                    <select id="newTaskChild" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                         <option value="daughter">👧 Filha (15 anos)</option>
                         <option value="son">👦 Filho (13 anos)</option>
-                        <option value="both">👥 Ambos (Ambos devem fazer)</option>
+                        <option value="both">👥 Ambos (Para os dois)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Título da Tarefa</label>
-                    <input type="text" id="newTaskTitle" required placeholder="Ex: Organizar a garagem" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Título da Tarefa</label>
+                    <input type="text" id="newTaskTitle" required placeholder="Ex: Lavar o salão de festas" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Valor em Pontos</label>
-                    <input type="number" id="newTaskPoints" required value="10" min="1" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Valor em Pontos</label>
+                    <input type="number" id="newTaskPoints" required value="10" min="1" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                 </div>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal('modalAddTask')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancelar</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">Salvar Tarefa</button>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modalAddTask')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/20">Salvar Tarefa</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: ADD REWARD (Parents) -->
-    <div id="modalAddReward" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-800">Nova Recompensa na Loja</h3>
-                <button onclick="closeModal('modalAddReward')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- MODAL: ADD REWARD -->
+    <div id="modalAddReward" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base">Nova Recompensa</h3>
+                <button onclick="closeModal('modalAddReward')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="handleAddReward(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Título da Recompensa</label>
-                    <input type="text" id="newRewardTitle" required placeholder="Ex: 1h extra de videogame" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Título do Prêmio</label>
+                    <input type="text" id="newRewardTitle" required placeholder="Ex: Ingresso de Cinema" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Descrição</label>
-                    <input type="text" id="newRewardDesc" required placeholder="Ex: Válido para qualquer dia da semana" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Descrição</label>
+                    <input type="text" id="newRewardDesc" required placeholder="Ex: Válido para qualquer sessão" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Custo em Pontos</label>
-                    <input type="number" id="newRewardCost" required value="50" min="5" max="1000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Custo (Pontos)</label>
+                        <input type="number" id="newRewardCost" required value="150" min="10" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Emoji Ícone</label>
+                        <input type="text" id="newRewardEmoji" required value="🎟️" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-center text-lg">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Emoji / Ícone</label>
-                    <input type="text" id="newRewardEmoji" required value="🎮" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal('modalAddReward')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancelar</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">Adicionar Recompensa</button>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modalAddReward')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/20">Adicionar à Loja</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: PENALTY / BONUS (Parents) -->
-    <div id="modalPenalty" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-800">Aplicar Penalidade ou Bônus Extra</h3>
-                <button onclick="closeModal('modalPenalty')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- MODAL: SETTINGS & PENALTIES -->
+    <div id="modalSettings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base">Configurações & Painel Administrativo</h3>
+                <button onclick="closeModal('modalSettings')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3">
+                <button onclick="closeModal('modalSettings'); openModal('modalPenalty');" class="w-full py-3 px-4 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-2xl text-xs flex items-center justify-between transition">
+                    <span><i class="fa-solid fa-scale-balanced mr-2"></i> Aplicar Penalidade ou Bônus Manual</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button onclick="resetDefaultData()" class="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold rounded-2xl text-xs flex items-center justify-between transition">
+                    <span><i class="fa-solid fa-rotate mr-2"></i> Restaurar Dados Padrão</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button onclick="logoutSession()" class="w-full py-3 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-2xl text-xs flex items-center justify-between transition">
+                    <span><i class="fa-solid fa-right-from-bracket mr-2"></i> Sair / Trocar de Conta</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PENALTY / BONUS -->
+    <div id="modalPenalty" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base">Aplicar Penalidade ou Bônus</h3>
+                <button onclick="closeModal('modalPenalty')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="handlePenaltyBonus(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Filho(a)</label>
-                    <select id="penChild" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Membro</label>
+                    <select id="penChild" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                         <option value="daughter">👧 Filha (15 anos)</option>
                         <option value="son">👦 Filho (13 anos)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tipo de Ação</label>
-                    <select id="penType" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Ação</label>
+                    <select id="penType" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                         <option value="penalty">⚠️ Penalidade (Descontar Pontos)</option>
                         <option value="bonus">⭐ Bônus Extra (Adicionar Pontos)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Motivo / Descrição</label>
-                    <input type="text" id="penReason" required placeholder="Ex: Deixou bagunça na sala / Ajudou sem ser pedido" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Motivo</label>
+                    <input type="text" id="penReason" required placeholder="Ex: Ajudou a guardar as compras do mercado" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Quantidade de Pontos</label>
-                    <input type="number" id="penPoints" required value="10" min="1" max="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Quantidade de Pontos</label>
+                    <input type="number" id="penPoints" required value="10" min="1" max="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs">
                 </div>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal('modalPenalty')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancelar</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">Confirmar</button>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modalPenalty')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold shadow-md">Confirmar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: SETTINGS & DATA -->
-    <div id="modalSettings" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-800">Gerenciamento de Nuvem & Dados</h3>
-                <button onclick="closeModal('modalSettings')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-500">Dados sincronizados em tempo real com o Firebase Cloud. Você pode reinicializar a base da família se necessário.</p>
-            <div class="pt-2 space-y-3">
-                <button onclick="resetDefaultData()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold py-2.5 rounded-xl text-sm transition">
-                    <i class="fa-solid fa-arrow-rotate-left mr-2"></i> Restaurar Dados Iniciais na Nuvem
-                </button>
-                <button onclick="logoutSession()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm transition">
-                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Trocar Perfil / Sair
-                </button>
-            </div>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastBox" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-2xl z-50 flex items-center space-x-3 hidden transition animate-bounce">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <div>
+            <h4 id="toastTitle" class="text-xs font-bold">Sucesso</h4>
+            <p id="toastMessage" class="text-[11px] text-slate-300">Ação realizada com sucesso.</p>
         </div>
     </div>
 
     <!-- FIREBASE & MAIN APP LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'familia-acao-default';
@@ -486,38 +507,102 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
-                        document.getElementById('authOverlay').classList.add('hidden');
+                        const authOverlay = document.getElementById('authOverlay');
+                        if (authOverlay) authOverlay.classList.add('hidden');
                         subscribeToCloudData();
                     } else {
                         try {
                             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                                 await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
                             }
                         } catch (err) {
-                            await signInAnonymously(auth);
+                            console.warn("Auth token notice:", err);
                         }
                     }
                 });
             } catch (e) {
-                console.warn("Fallback to offline mode due to config/permission error:", e);
-                document.getElementById('authOverlay').classList.add('hidden');
+                console.warn("Fallback to offline mode due to config error:", e);
+                const authOverlay = document.getElementById('authOverlay');
+                if (authOverlay) authOverlay.classList.add('hidden');
                 renderAll();
             }
 
             const today = new Date().toLocaleDateString('pt-BR');
-            document.getElementById('currentDateDisplay').textContent = today;
+            const dateDisplay = document.getElementById('currentDateDisplay');
+            if (dateDisplay) {
+                dateDisplay.textContent = today;
+            }
         };
 
-        window.performLogin = function() {
+        window.switchAuthTab = function(tab) {
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('authTabLoginBtn').className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition';
+                document.getElementById('authTabRegisterBtn').className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition';
+            } else {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('authTabRegisterBtn').className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-emerald-600 shadow-sm transition';
+                document.getElementById('authTabLoginBtn').className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition';
+            }
+        }
+
+        window.handleEmailLogin = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginRole').value;
+
+            try {
+                if (auth) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+                appState.currentRole = role;
+                document.getElementById('userRoleSelect').value = role;
+                document.getElementById('authOverlay').classList.add('hidden');
+                saveStateToCloud();
+                renderAll();
+                showToast('Login Realizado!', `Bem-vindo de volta, ${getRoleName(role)}.`, 'success');
+            } catch (err) {
+                showToast('Erro ao Entrar', err.message || 'Verifique e-mail e senha.', 'error');
+            }
+        }
+
+        window.handleEmailRegister = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('regRole').value;
+
+            try {
+                if (auth) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+                appState.currentRole = role;
+                document.getElementById('userRoleSelect').value = role;
+                document.getElementById('authOverlay').classList.add('hidden');
+                saveStateToCloud();
+                renderAll();
+                showToast('Conta Criada!', `Registrado e logado como ${getRoleName(role)}.`, 'success');
+            } catch (errReg) {
+                showToast('Erro no Cadastro', errReg.message || 'Tente outra senha ou e-mail.', 'error');
+            }
+        }
+
+        window.performAnonymousLogin = async function() {
             const role = document.getElementById('loginRole').value;
             appState.currentRole = role;
             document.getElementById('userRoleSelect').value = role;
             document.getElementById('authOverlay').classList.add('hidden');
+            if (auth) {
+                try {
+                    await signInAnonymously(auth);
+                } catch(e) {}
+            }
             saveStateToCloud();
             renderAll();
-            showToast('Bem-vindo!', `Acessando como ${getRoleName(role)}.`, 'success');
+            showToast('Acesso Rápido', `Acessando como ${getRoleName(role)}.`, 'success');
         };
 
         function subscribeToCloudData() {
@@ -564,34 +649,55 @@
 
         window.switchTab = function(tabId) {
             ['tabTasks', 'tabValidation', 'tabRewards', 'tabHistory'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
             });
             ['btnTabTasks', 'btnTabValidation', 'btnTabRewards', 'btnTabHistory'].forEach(id => {
                 const btn = document.getElementById(id);
-                btn.classList.remove('text-indigo-600', 'border-indigo-600');
-                btn.classList.add('text-slate-500', 'border-transparent');
+                if (btn) {
+                    btn.classList.remove('text-indigo-600', 'border-indigo-600');
+                    btn.classList.add('text-slate-500', 'border-transparent');
+                }
             });
 
-            document.getElementById(tabId).classList.remove('hidden');
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+
             const activeBtn = document.getElementById('btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
-            activeBtn.classList.remove('text-slate-500', 'border-transparent');
-            activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-500', 'border-transparent');
+                activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
+            }
         }
 
         function renderAll() {
-            document.getElementById('scoreDaughter').textContent = (appState.scores?.daughter || 0) + ' pts';
-            document.getElementById('scoreSon').textContent = (appState.scores?.son || 0) + ' pts';
-            document.getElementById('scoreBadgeDaughter').textContent = (appState.scores?.daughter || 0) + ' pts';
-            document.getElementById('scoreBadgeSon').textContent = (appState.scores?.son || 0) + ' pts';
+            const scoreDaughter = document.getElementById('scoreDaughter');
+            if (scoreDaughter) scoreDaughter.textContent = (appState.scores?.daughter || 0) + ' pts';
+            
+            const scoreSon = document.getElementById('scoreSon');
+            if (scoreSon) scoreSon.textContent = (appState.scores?.son || 0) + ' pts';
+            
+            const scoreBadgeDaughter = document.getElementById('scoreBadgeDaughter');
+            if (scoreBadgeDaughter) scoreBadgeDaughter.textContent = (appState.scores?.daughter || 0) + ' pts';
+            
+            const scoreBadgeSon = document.getElementById('scoreBadgeSon');
+            if (scoreBadgeSon) scoreBadgeSon.textContent = (appState.scores?.son || 0) + ' pts';
 
             const tasks = appState.tasks || [];
             const pendingList = tasks.filter(t => t.status === 'pending');
-            document.getElementById('countPending').textContent = pendingList.length;
-            document.getElementById('badgeValidation').textContent = pendingList.length;
+            
+            const countPending = document.getElementById('countPending');
+            if (countPending) countPending.textContent = pendingList.length;
+            
+            const badgeValidation = document.getElementById('badgeValidation');
+            if (badgeValidation) badgeValidation.textContent = pendingList.length;
 
             const isParent = appState.currentRole === 'parent';
-            document.getElementById('parentTaskControls').style.display = isParent ? 'flex' : 'none';
-            document.getElementById('parentRewardControls').style.display = isParent ? 'block' : 'none';
+            const parentTaskControls = document.getElementById('parentTaskControls');
+            if (parentTaskControls) parentTaskControls.style.display = isParent ? 'flex' : 'none';
+            
+            const parentRewardControls = document.getElementById('parentRewardControls');
+            if (parentRewardControls) parentRewardControls.style.display = isParent ? 'block' : 'none';
 
             renderTasks();
             renderValidationTable();
@@ -602,15 +708,17 @@
         function renderTasks() {
             const daughterList = document.getElementById('listDaughterTasks');
             const sonList = document.getElementById('listSonTasks');
-            daughterList.innerHTML = '';
-            sonList.innerHTML = '';
-
+            
             const tasks = appState.tasks || [];
             const daughterTasks = tasks.filter(t => t.child === 'daughter');
             const sonTasks = tasks.filter(t => t.child === 'son');
 
-            daughterList.innerHTML = generateTaskListHTML(daughterTasks, 'daughter');
-            sonList.innerHTML = generateTaskListHTML(sonTasks, 'son');
+            if (daughterList) {
+                daughterList.innerHTML = generateTaskListHTML(daughterTasks, 'daughter');
+            }
+            if (sonList) {
+                sonList.innerHTML = generateTaskListHTML(sonTasks, 'son');
+            }
         }
 
         function generateTaskListHTML(tasks, childKey) {
@@ -662,6 +770,7 @@
 
         function renderValidationTable() {
             const tbody = document.getElementById('validationTableBody');
+            if (!tbody) return;
             const pendingTasks = (appState.tasks || []).filter(t => t.status === 'pending');
 
             if (pendingTasks.length === 0) {
@@ -718,6 +827,7 @@
 
         function renderRewards() {
             const grid = document.getElementById('rewardsGrid');
+            if (!grid) return;
             const rewards = appState.rewards || [];
             grid.innerHTML = rewards.map(r => {
                 return `
@@ -766,6 +876,7 @@
 
         function renderHistory() {
             const tbody = document.getElementById('historyTableBody');
+            if (!tbody) return;
             const history = appState.history || [];
             if (history.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400 text-xs">Nenhum histórico registrado ainda.</td></tr>`;
@@ -894,6 +1005,8 @@
             const toastTitle = document.getElementById('toastTitle');
             const toastMessage = document.getElementById('toastMessage');
             const toastIcon = document.getElementById('toastIcon');
+
+            if (!toast) return;
 
             toastTitle.textContent = title;
             toastMessage.textContent = message;
