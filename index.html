@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Família em Ação: Gestão de Tarefas e Recompensas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#0ea5e9',
+                        accent: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Inter & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- AUTHENTICATION OVERLAY / LOGIN MODAL -->
+    <div id="authOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mx-auto font-bold shadow-inner">
+                    <i class="fa-solid fa-house-chimney text-indigo-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Família em Ação</h2>
+                <p class="text-xs text-slate-500">Faça login para sincronizar tarefas e pontos na nuvem em tempo real.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Selecionar Perfil de Acesso</label>
+                    <select id="loginRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="parent">👨‍👩‍👧 Pais (Conferentes / Admins)</option>
+                        <option value="daughter">👧 Filha (15 anos)</option>
+                        <option value="son">👦 Filho (13 anos)</option>
+                    </select>
+                </div>
+
+                <button onclick="performLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Entrar na Nuvem Familiar
+                </button>
+            </div>
+
+            <div class="text-center pt-2 border-t border-slate-100">
+                <p class="text-[11px] text-slate-400">💡 Compartilhe o link do GitHub Pages com seus filhos no celular deles!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-2 rounded-xl text-2xl">
+                    <i class="fa-solid fa-house-chimney text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Família em Ação</h1>
+                    <p class="text-xs text-indigo-200 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> GitHub Pages & Cloud</p>
+                </div>
+            </div>
+
+            <!-- Role Switcher & User Status -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center bg-indigo-700/60 rounded-xl p-1 text-sm border border-indigo-500/50">
+                    <span class="px-3 text-xs text-indigo-200 font-medium hidden sm:inline"><i class="fa-solid fa-user-gear mr-1"></i>Perfil:</span>
+                    <select id="userRoleSelect" onchange="switchRole(this.value)" class="bg-indigo-800 text-white text-xs sm:text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
+                        <option value="parent">👨‍👩‍👧 Pais (Conferentes)</option>
+                        <option value="daughter">👧 Filha (15 anos)</option>
+                        <option value="son">👦 Filho (13 anos)</option>
+                    </select>
+                </div>
+                <button onclick="openModal('modalSettings')" class="bg-indigo-700 hover:bg-indigo-800 p-2 rounded-xl text-white transition text-sm" title="Configurações & Dados">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+
+        <!-- Notification Banner / Custom Alert Box -->
+        <div id="toastBox" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border-l-4 border-indigo-500 transition-all transform translate-y-2">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+            <div>
+                <h4 id="toastTitle" class="font-bold text-sm">Aviso</h4>
+                <p id="toastMessage" class="text-xs text-slate-300">Mensagem aqui</p>
+            </div>
+        </div>
+
+        <!-- Dashboard Summary Bar: Points Balance -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pontos da Filha (15 anos)</p>
+                    <h3 id="scoreDaughter" class="text-3xl font-bold text-indigo-600 mt-1">0 pts</h3>
+                    <span class="text-xs text-emerald-600 font-medium mt-1 inline-block"><i class="fa-solid fa-trophy mr-1"></i>Pronta para resgate</span>
+                </div>
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                    👧
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pontos do Filho (13 anos)</p>
+                    <h3 id="scoreSon" class="text-3xl font-bold text-sky-600 mt-1">0 pts</h3>
+                    <span class="text-xs text-emerald-600 font-medium mt-1 inline-block"><i class="fa-solid fa-trophy mr-1"></i>Pronta para resgate</span>
+                </div>
+                <div class="w-12 h-12 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                    👦
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pendentes de Validação</p>
+                    <h3 id="countPending" class="text-3xl font-bold text-amber-500 mt-1">0</h3>
+                    <span class="text-xs text-amber-600 font-medium mt-1 inline-block"><i class="fa-solid fa-clock mr-1"></i>Aguardando Pais</span>
+                </div>
+                <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Data de Hoje</p>
+                    <h3 id="currentDateDisplay" class="text-lg font-bold text-slate-700 mt-1">--/--/----</h3>
+                    <span class="text-xs text-slate-500 font-medium mt-1 inline-block"><i class="fa-solid fa-calendar-day mr-1"></i>Checkup Ativo</span>
+                </div>
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-200 overflow-x-auto space-x-6">
+            <button onclick="switchTab('tabTasks')" id="btnTabTasks" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-indigo-600 border-indigo-600 whitespace-nowrap">
+                <i class="fa-solid fa-list-check mr-2"></i>Tarefas Diárias & Checklist
+            </button>
+            <button onclick="switchTab('tabValidation')" id="btnTabValidation" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-slate-500 border-transparent hover:text-slate-700 whitespace-nowrap">
+                <i class="fa-solid fa-clipboard-list mr-2"></i>Painel de Validação (Pais) <span id="badgeValidation" class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full ml-1">0</span>
+            </button>
+            <button onclick="switchTab('tabRewards')" id="btnTabRewards" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-slate-500 border-transparent hover:text-slate-700 whitespace-nowrap">
+                <i class="fa-solid fa-gift mr-2"></i>Loja de Recompensas
+            </button>
+            <button onclick="switchTab('tabHistory')" id="btnTabHistory" class="py-3 px-1 border-b-2 font-semibold text-sm transition text-slate-500 border-transparent hover:text-slate-700 whitespace-nowrap">
+                <i class="fa-solid fa-clock-rotate-left mr-2"></i>Histórico & Extrato
+            </button>
+        </div>
+
+        <!-- TAB 1: TASKS & CHECKLIST -->
+        <div id="tabTasks" class="space-y-6">
+            <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Checklist Diário dos Filhos</h2>
+                    <p class="text-xs text-slate-500">Filhos marcam quando concluem. Os pais conferem na aba de validação.</p>
+                </div>
+                <div id="parentTaskControls" class="hidden flex gap-2">
+                    <button onclick="openModal('modalAddTask')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Nova Tarefa
+                    </button>
+                    <button onclick="resetDailyChecklist()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Resetar Dia
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Daughter Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 text-white flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-lg">👧</div>
+                            <div>
+                                <h3 class="font-bold">Filha (15 anos)</h3>
+                                <p class="text-xs text-indigo-100">Responsável pelo quarto e rodízio diário</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="scoreBadgeDaughter" class="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-semibold">0 pts</span>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-grow space-y-3" id="listDaughterTasks">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Son Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                    <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4 text-white flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-lg">👦</div>
+                            <div>
+                                <h3 class="font-bold">Filho (13 anos)</h3>
+                                <p class="text-xs text-sky-100">Responsável pelo quarto e apoio na casa</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="scoreBadgeSon" class="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-semibold">0 pts</span>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-grow space-y-3" id="listSonTasks">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: VALIDATION QUEUE (PARENTS) -->
+        <div id="tabValidation" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-clipboard-check text-indigo-600 mr-2"></i>Painel de Validação e Penalidades (Área dos Pais)</h2>
+                        <p class="text-xs text-slate-500">Confirme as tarefas realizadas pelos filhos para liberar os pontos, ou aplique penalidades se necessário.</p>
+                    </div>
+                    <button onclick="openModal('modalPenalty')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Aplicar Penalidade / Bônus
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4 font-semibold">Filho(a)</th>
+                                <th class="py-3 px-4 font-semibold">Tarefa / Descrição</th>
+                                <th class="py-3 px-4 font-semibold">Pontos</th>
+                                <th class="py-3 px-4 font-semibold">Status</th>
+                                <th class="py-3 px-4 font-semibold text-right">Ações dos Pais</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validationTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: REWARDS STORE -->
+        <div id="tabRewards" class="hidden space-y-6">
+            <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-gift text-indigo-600 mr-2"></i>Loja de Recompensas da Família</h2>
+                    <p class="text-xs text-slate-500">Troque seus pontos acumulados por privilégios, tempo de tela ou bônus!</p>
+                </div>
+                <div id="parentRewardControls" class="hidden">
+                    <button onclick="openModal('modalAddReward')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Adicionar Recompensa
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="rewardsGrid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- TAB 4: HISTORY & STATEMENT -->
+        <div id="tabHistory" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-2"></i>Histórico de Atividades e Extrato</h2>
+                        <p class="text-xs text-slate-500">Registro de todas as pontuações, resgates e penalidades aplicadas.</p>
+                    </div>
+                    <button onclick="clearHistory()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                        Limpar Histórico
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4 font-semibold">Data / Hora</th>
+                                <th class="py-3 px-4 font-semibold">Filho(a)</th>
+                                <th class="py-3 px-4 font-semibold">Descrição</th>
+                                <th class="py-3 px-4 font-semibold">Pontos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-auto bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        <p>Família em Ação • GitHub Pages Ready • 15 & 13 Anos</p>
+    </footer>
+
+    <!-- MODAL: ADD TASK (Parents) -->
+    <div id="modalAddTask" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Adicionar Nova Tarefa</h3>
+                <button onclick="closeModal('modalAddTask')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddTask(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Para quem?</label>
+                    <select id="newTaskChild" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="daughter">👧 Filha (15 anos)</option>
+                        <option value="son">👦 Filho (13 anos)</option>
+                        <option value="both">👥 Ambos (Ambos devem fazer)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Título da Tarefa</label>
+                    <input type="text" id="newTaskTitle" required placeholder="Ex: Organizar a garagem" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Valor em Pontos</label>
+                    <input type="number" id="newTaskPoints" required value="10" min="1" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalAddTask')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD REWARD (Parents) -->
+    <div id="modalAddReward" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Nova Recompensa na Loja</h3>
+                <button onclick="closeModal('modalAddReward')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddReward(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Título da Recompensa</label>
+                    <input type="text" id="newRewardTitle" required placeholder="Ex: 1h extra de videogame" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Descrição</label>
+                    <input type="text" id="newRewardDesc" required placeholder="Ex: Válido para qualquer dia da semana" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Custo em Pontos</label>
+                    <input type="number" id="newRewardCost" required value="50" min="5" max="1000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Emoji / Ícone</label>
+                    <input type="text" id="newRewardEmoji" required value="🎮" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalAddReward')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">Adicionar Recompensa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: PENALTY / BONUS (Parents) -->
+    <div id="modalPenalty" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Aplicar Penalidade ou Bônus Extra</h3>
+                <button onclick="closeModal('modalPenalty')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handlePenaltyBonus(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Filho(a)</label>
+                    <select id="penChild" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="daughter">👧 Filha (15 anos)</option>
+                        <option value="son">👦 Filho (13 anos)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tipo de Ação</label>
+                    <select id="penType" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="penalty">⚠️ Penalidade (Descontar Pontos)</option>
+                        <option value="bonus">⭐ Bônus Extra (Adicionar Pontos)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Motivo / Descrição</label>
+                    <input type="text" id="penReason" required placeholder="Ex: Deixou bagunça na sala / Ajudou sem ser pedido" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Quantidade de Pontos</label>
+                    <input type="number" id="penPoints" required value="10" min="1" max="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalPenalty')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SETTINGS & DATA -->
+    <div id="modalSettings" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Gerenciamento de Nuvem & Dados</h3>
+                <button onclick="closeModal('modalSettings')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500">Dados sincronizados em tempo real com o Firebase Cloud. Você pode reinicializar a base da família se necessário.</p>
+            <div class="pt-2 space-y-3">
+                <button onclick="resetDefaultData()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold py-2.5 rounded-xl text-sm transition">
+                    <i class="fa-solid fa-arrow-rotate-left mr-2"></i> Restaurar Dados Iniciais na Nuvem
+                </button>
+                <button onclick="logoutSession()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm transition">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Trocar Perfil / Sair
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE & MAIN APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'familia-acao-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDummyKeyForGitHubPagesHostingPlaceholder",
+            authDomain: "familia-acao.firebaseapp.com",
+            projectId: "familia-acao",
+            storageBucket: "familia-acao.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        let app, db, auth;
+        let currentUser = null;
+        let unsub = null;
+
+        const defaultState = {
+            currentRole: 'parent',
+            scores: { daughter: 45, son: 30 },
+            tasks: [
+                { id: 't1', child: 'daughter', title: 'Arrumar a cama e organizar o quarto', points: 5, completed: true, status: 'approved' },
+                { id: 't2', child: 'daughter', title: 'Recolher e lavar a louça do almoço/jantar', points: 10, completed: true, status: 'pending' },
+                { id: 't3', child: 'daughter', title: 'Manter a sala limpa e organizada', points: 5, completed: false, status: 'open' },
+                { id: 't4', child: 'son', title: 'Arrumar a cama e organizar o quarto', points: 5, completed: true, status: 'approved' },
+                { id: 't5', child: 'son', title: 'Alimentar o pet e trocar a água', points: 5, completed: true, status: 'pending' },
+                { id: 't6', child: 'son', title: 'Organizar a garagem e recolher lixo', points: 8, completed: false, status: 'open' }
+            ],
+            rewards: [
+                { id: 'r1', title: '1h Extra de Videogame', description: 'Tempo adicional livre no fim de semana', cost: 40, emoji: '🎮' },
+                { id: 'r2', title: 'Escolher o Filme da Família', description: 'Escolha a sessão de cinema em casa com pipoca', cost: 60, emoji: '🍿' },
+                { id: 'r3', title: 'Pix de R$ 20,00', description: 'Dinheiro para pequenos gastos pessoais', cost: 120, emoji: '💵' },
+                { id: 'r4', title: 'Isenção de Tarefa (1 dia)', description: 'Pode pular uma tarefa diária à escolha', cost: 100, emoji: '🎟️' },
+                { id: 'r5', title: 'Passeio Sorveteria com Pais', description: 'Saída especial para tomar sorvete', cost: 180, emoji: '🍦' }
+            ],
+            history: [
+                { date: '12/03/2026 09:00', child: 'daughter', title: 'Início do Sistema Cloud', points: '+45' },
+                { date: '12/03/2026 09:00', child: 'son', title: 'Início do Sistema Cloud', points: '+30' }
+            ]
+        };
+
+        let appState = JSON.parse(JSON.stringify(defaultState));
+
+        window.initFirebaseAndApp = async function() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('authOverlay').classList.add('hidden');
+                        subscribeToCloudData();
+                    } else {
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (err) {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn("Fallback to offline mode due to config/permission error:", e);
+                document.getElementById('authOverlay').classList.add('hidden');
+                renderAll();
+            }
+
+            const today = new Date().toLocaleDateString('pt-BR');
+            document.getElementById('currentDateDisplay').textContent = today;
+        };
+
+        window.performLogin = function() {
+            const role = document.getElementById('loginRole').value;
+            appState.currentRole = role;
+            document.getElementById('userRoleSelect').value = role;
+            document.getElementById('authOverlay').classList.add('hidden');
+            saveStateToCloud();
+            renderAll();
+            showToast('Bem-vindo!', `Acessando como ${getRoleName(role)}.`, 'success');
+        };
+
+        function subscribeToCloudData() {
+            if (!db) return;
+            const docRef = doc(db, 'artifacts', appId, 'states', 'familia_state_v1');
+            
+            unsub = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appState = docSnap.data();
+                } else {
+                    setDoc(docRef, defaultState).catch(err => console.warn("Init doc error:", err));
+                    appState = JSON.parse(JSON.stringify(defaultState));
+                }
+                document.getElementById('userRoleSelect').value = appState.currentRole || 'parent';
+                renderAll();
+            }, (error) => {
+                console.warn("Firestore sync notice:", error.message);
+                renderAll();
+            });
+        }
+
+        async function saveStateToCloud() {
+            renderAll();
+            if (!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'states', 'familia_state_v1');
+                await setDoc(docRef, appState);
+            } catch (e) {
+                console.warn("Cloud save warning:", e.message);
+            }
+        }
+
+        window.switchRole = function(role) {
+            appState.currentRole = role;
+            saveStateToCloud();
+            showToast('Perfil alterado', `Você está navegando como ${getRoleName(role)}.`, 'info');
+        }
+
+        function getRoleName(role) {
+            if(role === 'parent') return 'Pais (Conferentes)';
+            if(role === 'daughter') return 'Filha (15 anos)';
+            return 'Filho (13 anos)';
+        }
+
+        window.switchTab = function(tabId) {
+            ['tabTasks', 'tabValidation', 'tabRewards', 'tabHistory'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            ['btnTabTasks', 'btnTabValidation', 'btnTabRewards', 'btnTabHistory'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.classList.remove('text-indigo-600', 'border-indigo-600');
+                btn.classList.add('text-slate-500', 'border-transparent');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+            activeBtn.classList.remove('text-slate-500', 'border-transparent');
+            activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
+        }
+
+        function renderAll() {
+            document.getElementById('scoreDaughter').textContent = (appState.scores?.daughter || 0) + ' pts';
+            document.getElementById('scoreSon').textContent = (appState.scores?.son || 0) + ' pts';
+            document.getElementById('scoreBadgeDaughter').textContent = (appState.scores?.daughter || 0) + ' pts';
+            document.getElementById('scoreBadgeSon').textContent = (appState.scores?.son || 0) + ' pts';
+
+            const tasks = appState.tasks || [];
+            const pendingList = tasks.filter(t => t.status === 'pending');
+            document.getElementById('countPending').textContent = pendingList.length;
+            document.getElementById('badgeValidation').textContent = pendingList.length;
+
+            const isParent = appState.currentRole === 'parent';
+            document.getElementById('parentTaskControls').style.display = isParent ? 'flex' : 'none';
+            document.getElementById('parentRewardControls').style.display = isParent ? 'block' : 'none';
+
+            renderTasks();
+            renderValidationTable();
+            renderRewards();
+            renderHistory();
+        }
+
+        function renderTasks() {
+            const daughterList = document.getElementById('listDaughterTasks');
+            const sonList = document.getElementById('listSonTasks');
+            daughterList.innerHTML = '';
+            sonList.innerHTML = '';
+
+            const tasks = appState.tasks || [];
+            const daughterTasks = tasks.filter(t => t.child === 'daughter');
+            const sonTasks = tasks.filter(t => t.child === 'son');
+
+            daughterList.innerHTML = generateTaskListHTML(daughterTasks, 'daughter');
+            sonList.innerHTML = generateTaskListHTML(sonTasks, 'son');
+        }
+
+        function generateTaskListHTML(tasks, childKey) {
+            if (tasks.length === 0) {
+                return '<p class="text-xs text-slate-400 text-center py-4">Nenhuma tarefa cadastrada no momento.</p>';
+            }
+
+            const isParent = appState.currentRole === 'parent';
+            const isOwner = appState.currentRole === childKey || isParent;
+
+            return tasks.map(t => {
+                let statusBadge = '';
+                if(t.status === 'approved') statusBadge = '<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium"><i class="fa-solid fa-check mr-1"></i>Aprovado</span>';
+                else if(t.status === 'pending') statusBadge = '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium"><i class="fa-solid fa-clock mr-1"></i>Aguardando Pais</span>';
+                else statusBadge = '<span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Pendente</span>';
+
+                return `
+                    <div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" ${t.completed ? 'checked' : ''} ${!isOwner ? 'disabled' : ''} 
+                                onchange="toggleTask('${t.id}')" class="w-5 h-5 text-indigo-600 rounded cursor-pointer">
+                            <div>
+                                <h4 class="text-sm font-medium ${t.completed ? 'line-through text-slate-400' : 'text-slate-700'}">${t.title}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs text-indigo-600 font-semibold">+${t.points} pts</span>
+                                    ${statusBadge}
+                                </div>
+                            </div>
+                        </div>
+                        ${isParent ? `<button onclick="deleteTask('${t.id}')" class="text-slate-400 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.toggleTask = function(taskId) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            task.completed = !task.completed;
+            if (task.completed) {
+                task.status = 'pending';
+                showToast('Tarefa Concluída!', `Sinalizada como feita. Aguardando conferência dos pais.`, 'success');
+            } else {
+                task.status = 'open';
+            }
+            saveStateToCloud();
+        }
+
+        function renderValidationTable() {
+            const tbody = document.getElementById('validationTableBody');
+            const pendingTasks = (appState.tasks || []).filter(t => t.status === 'pending');
+
+            if (pendingTasks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">Nenhuma tarefa pendente de validação no momento. Tudo em dia! 🎉</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = pendingTasks.map(t => {
+                const childName = t.child === 'daughter' ? '👧 Filha (15 anos)' : '👦 Filho (13 anos)';
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 font-medium text-slate-700">${childName}</td>
+                        <td class="py-3 px-4 text-slate-600">${t.title}</td>
+                        <td class="py-3 px-4 font-semibold text-indigo-600">+${t.points} pts</td>
+                        <td class="py-3 px-4"><span class="bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">Aguardando</span></td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick="approveTask('${t.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition">
+                                <i class="fa-solid fa-check mr-1"></i> Aprovar
+                            </button>
+                            <button onclick="rejectTask('${t.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                                <i class="fa-solid fa-xmark mr-1"></i> Refazer
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.approveTask = function(taskId) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            task.status = 'approved';
+            appState.scores[task.child] = (appState.scores[task.child] || 0) + task.points;
+
+            const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            const childLabel = task.child === 'daughter' ? 'Filha (15a)' : 'Filho (13a)';
+            if (!appState.history) appState.history = [];
+            appState.history.unshift({ date: now, child: task.child, title: `Tarefa Aprovada: ${task.title}`, points: `+${task.points}` });
+
+            saveStateToCloud();
+            showToast('Tarefa Aprovada!', `Pontos creditados para ${childLabel}.`, 'success');
+        }
+
+        window.rejectTask = function(taskId) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            task.completed = false;
+            task.status = 'open';
+            saveStateToCloud();
+            showToast('Tarefa Rejeitada', 'A tarefa retornou para pendente para ser refeita.', 'error');
+        }
+
+        function renderRewards() {
+            const grid = document.getElementById('rewardsGrid');
+            const rewards = appState.rewards || [];
+            grid.innerHTML = rewards.map(r => {
+                return `
+                    <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition">
+                        <div>
+                            <div class="flex justify-between items-start">
+                                <span class="text-3xl">${r.emoji}</span>
+                                <span class="bg-indigo-50 text-indigo-700 font-bold text-xs px-3 py-1 rounded-full">${r.cost} pts</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 mt-3 text-base">${r.title}</h3>
+                            <p class="text-xs text-slate-500 mt-1">${r.description}</p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 flex gap-2">
+                            <button onclick="redeemReward('${r.id}', 'daughter')" class="flex-1 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 text-xs font-semibold py-2 rounded-xl transition">
+                                Resgatar (Filha)
+                            </button>
+                            <button onclick="redeemReward('${r.id}', 'son')" class="flex-1 bg-sky-50 hover:bg-sky-600 hover:text-white text-sky-600 text-xs font-semibold py-2 rounded-xl transition">
+                                Resgatar (Filho)
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.redeemReward = function(rewardId, childKey) {
+            const reward = appState.rewards.find(r => r.id === rewardId);
+            if (!reward) return;
+
+            const childName = childKey === 'daughter' ? 'Filha (15 anos)' : 'Filho (13 anos)';
+            const currentPoints = appState.scores[childKey] || 0;
+
+            if (currentPoints < reward.cost) {
+                showToast('Pontos Insuficientes', `${childName} possui ${currentPoints} pts, mas precisa de ${reward.cost} pts.`, 'error');
+                return;
+            }
+
+            appState.scores[childKey] = currentPoints - reward.cost;
+            const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            if (!appState.history) appState.history = [];
+            appState.history.unshift({ date: now, child: childKey, title: `Resgate: ${reward.title}`, points: `-${reward.cost}` });
+
+            saveStateToCloud();
+            showToast('Recompensa Resgatada!', `${childName} resgatou com sucesso: ${reward.title}!`, 'success');
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            const history = appState.history || [];
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400 text-xs">Nenhum histórico registrado ainda.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = history.map(h => {
+                const childName = h.child === 'daughter' ? '👧 Filha' : '👦 Filho';
+                const isPositive = h.points.startsWith('+');
+                const badgeColor = isPositive ? 'text-emerald-600' : 'text-rose-600';
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 text-xs text-slate-400">${h.date}</td>
+                        <td class="py-3 px-4 font-medium text-slate-700">${childName}</td>
+                        <td class="py-3 px-4 text-slate-600">${h.title}</td>
+                        <td class="py-3 px-4 font-bold ${badgeColor}">${h.points} pts</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.openModal = function(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        window.handleAddTask = function(e) {
+            e.preventDefault();
+            const child = document.getElementById('newTaskChild').value;
+            const title = document.getElementById('newTaskTitle').value;
+            const points = parseInt(document.getElementById('newTaskPoints').value);
+
+            if (!appState.tasks) appState.tasks = [];
+
+            if (child === 'both') {
+                appState.tasks.push({ id: 't_' + Date.now() + '_1', child: 'daughter', title, points, completed: false, status: 'open' });
+                appState.tasks.push({ id: 't_' + Date.now() + '_2', child: 'son', title, points, completed: false, status: 'open' });
+            } else {
+                appState.tasks.push({ id: 't_' + Date.now(), child, title, points, completed: false, status: 'open' });
+            }
+
+            saveStateToCloud();
+            closeModal('modalAddTask');
+            document.getElementById('newTaskTitle').value = '';
+            showToast('Tarefa Criada', 'Nova tarefa adicionada ao checklist.', 'success');
+        }
+
+        window.handleAddReward = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('newRewardTitle').value;
+            const description = document.getElementById('newRewardDesc').value;
+            const cost = parseInt(document.getElementById('newRewardCost').value);
+            const emoji = document.getElementById('newRewardEmoji').value;
+
+            if (!appState.rewards) appState.rewards = [];
+            appState.rewards.push({ id: 'r_' + Date.now(), title, description, cost, emoji });
+            saveStateToCloud();
+            closeModal('modalAddReward');
+            showToast('Recompensa Adicionada', 'A nova recompensa já está disponível na loja.', 'success');
+        }
+
+        window.handlePenaltyBonus = function(e) {
+            e.preventDefault();
+            const child = document.getElementById('penChild').value;
+            const type = document.getElementById('penType').value;
+            const reason = document.getElementById('penReason').value;
+            const points = parseInt(document.getElementById('penPoints').value);
+
+            const childName = child === 'daughter' ? 'Filha (15a)' : 'Filho (13a)';
+            const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            if (!appState.history) appState.history = [];
+            if (!appState.scores) appState.scores = { daughter: 0, son: 0 };
+
+            if (type === 'penalty') {
+                appState.scores[child] = Math.max(0, (appState.scores[child] || 0) - points);
+                appState.history.unshift({ date: now, child, title: `Penalidade: ${reason}`, points: `-${points}` });
+                showToast('Penalidade Aplicada', `${points} pontos descontados de ${childName}.`, 'error');
+            } else {
+                appState.scores[child] = (appState.scores[child] || 0) + points;
+                appState.history.unshift({ date: now, child, title: `Bônus Extra: ${reason}`, points: `+${points}` });
+                showToast('Bônus Concedido', `${points} pontos adicionados para ${childName}.`, 'success');
+            }
+
+            saveStateToCloud();
+            closeModal('modalPenalty');
+        }
+
+        window.deleteTask = function(taskId) {
+            appState.tasks = (appState.tasks || []).filter(t => t.id !== taskId);
+            saveStateToCloud();
+            showToast('Tarefa Removida', 'A tarefa foi excluída.', 'info');
+        }
+
+        window.resetDailyChecklist = function() {
+            (appState.tasks || []).forEach(t => {
+                t.completed = false;
+                t.status = 'open';
+            });
+            saveStateToCloud();
+            showToast('Checklist Reiniciado', 'Todas as tarefas voltaram para o status diário.', 'info');
+        }
+
+        window.clearHistory = function() {
+            appState.history = [];
+            saveStateToCloud();
+            showToast('Histórico limpo', 'O registro foi esvaziado.', 'info');
+        }
+
+        window.resetDefaultData = function() {
+            appState = JSON.parse(JSON.stringify(defaultState));
+            saveStateToCloud();
+            closeModal('modalSettings');
+            showToast('Dados Restaurados', 'O aplicativo retornou ao estado inicial.', 'info');
+        }
+
+        window.logoutSession = function() {
+            closeModal('modalSettings');
+            document.getElementById('authOverlay').classList.remove('hidden');
+        }
+
+        window.showToast = function(title, message, type = 'success') {
+            const toast = document.getElementById('toastBox');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+            } else if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-sky-400 text-lg';
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
+        }
+
+        window.onload = function() {
+            initFirebaseAndApp();
+        };
+    </script>
+</body>
+</html>
